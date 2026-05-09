@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">Project Analytics & Projections</div>
+        <div class="text-muted small">Forecast spend and keep the budget calm.</div>
+    </div>
+    <div class="action-strip">
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#configModal">Configure Budget</button>
+        <a href="{% url 'expenses:list' %}" class="btn btn-primary">View Expenses</a>
+    </div>
+</div>
+
+{% if not metrics or not metrics.meta %}
+    <div class="alert alert-custom alert-warning" role="alert">
+        Please configure the initial project budget and timeline thresholds first.
+    </div>
+{% else %}
+    <!-- Budget Overview Cards (muted, no heavy backgrounds) -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="text-muted small text-uppercase">Total Budget</span>
+                            <h3 class="mt-1 mb-0 fw-bold">₹{{ metrics.meta.total_budget|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <span class="text-muted small">Budget</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="text-muted small text-uppercase">Total Spent</span>
+                            <h3 class="mt-1 mb-0 fw-bold text-warning">₹{{ metrics.total_spent|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <span class="text-muted small">Spent</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="text-muted small text-uppercase">Remaining Budget</span>
+                            <h3 class="mt-1 mb-0 fw-bold text-success">₹{{ metrics.remaining_budget|floatformat:2|intcomma }}</h3>
+                        </div>
+                        <span class="text-muted small">Remaining</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Utilization Progress Bar (dynamic color based on usage) -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <h5 class="card-title mb-0">Budget Utilization</h5>
+                <span class="badge-soft">{{ metrics.percent_used }}% used</span>
+            </div>
+            <div class="progress" style="height: 12px; border-radius: 20px;">
+                <div class="progress-bar 
+                    {% if metrics.percent_used > 90 %}bg-danger
+                    {% elif metrics.percent_used > 70 %}bg-warning
+                    {% else %}bg-teal{% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ metrics.percent_used }}%;" 
+                    aria-valuenow="{{ metrics.percent_used }}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-muted">₹{{ metrics.total_spent|floatformat:0|intcomma }} spent</small>
+                <small class="text-muted">₹{{ metrics.meta.total_budget|floatformat:0|intcomma }} total</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projections & Burn Rates (two columns) -->
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Burn Rates</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Daily Burn Rate</span>
+                        <span class="fw-semibold">₹{{ metrics.daily_burn|floatformat:2|intcomma }} / day</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Estimated Monthly Burn</span>
+                        <span class="fw-semibold">₹{{ metrics.monthly_burn|floatformat:2|intcomma }} / month</span>
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Elapsed Days</span>
+                        <span class="fw-semibold">{{ metrics.elapsed_days }} days</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Target Remaining</span>
+                        <span class="fw-semibold">{{ metrics.remaining_days }} days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">Projection Status</h5>
+                        <span class="badge-soft 
+                            {% if metrics.status == 'Over Budget' %}text-danger border-danger
+                            {% elif metrics.status == 'Under Budget' %}text-success border-success
+                            {% else %}text-info border-info{% endif %}">
+                            {{ metrics.status }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Projected Final Cost</span>
+                        <span class="fw-semibold">₹{{ metrics.projected_total|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="mt-3 p-3 rounded-3" style="background: var(--accent-light);">
+                        {% if metrics.status == 'Over Budget' %}
+                            <div class="d-flex align-items-center gap-2 text-danger">
+                                <span class="fw-semibold">Exceeding by: ₹{{ metrics.variance|floatformat:2|intcomma }}</span>
+                            </div>
+                        {% elif metrics.status == 'Under Budget' %}
+                            <div class="d-flex align-items-center gap-2 text-success">
+                                <span class="fw-semibold">Savings margin: ₹{{ metrics.variance|floatformat:2|intcomma|stringformat:"s"|slice:"1:" }}</span>
+                            </div>
+                        {% else %}
+                            <div class="d-flex align-items-center gap-2 text-primary">
+                                <span class="fw-semibold">Remaining exactly on track</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Contributions & Labor/Material -->
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="mb-0">Financial Leaks (by Category)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-end">Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in metrics.category_contributions %}
+                                <tr>
+                                    <td class="fw-medium">{{ c.category__name }}</td>
+                                    <td class="text-end fw-semibold">₹{{ c.total|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-center py-4 text-muted">No expenses mapped yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="mb-0">Life Cycle: Labor vs Material</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Labor</span>
+                        <span class="fw-semibold">₹{{ metrics.labor_spent|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="progress mb-4" style="height: 8px;">
+                        {% with total_labor_material=metrics.labor_spent|add:metrics.material_spent %}
+                        {% if total_labor_material > 0 %}
+                        <div class="progress-bar bg-teal" style="width: {% widthratio metrics.labor_spent total_labor_material 100 %}%"></div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Materials</span>
+                        <span class="fw-semibold">₹{{ metrics.material_spent|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        {% with total_labor_material=metrics.labor_spent|add:metrics.material_spent %}
+                        {% if total_labor_material > 0 %}
+                        <div class="progress-bar bg-secondary" style="width: {% widthratio metrics.material_spent total_labor_material 100 %}%"></div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Configuration Modal (improved styling) -->
+<div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title brand-font" id="configModalLabel">Configure Budget Goals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text text-muted small">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: auto-dismiss alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                if (bsAlert) bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

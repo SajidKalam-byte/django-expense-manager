@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">Contractor Payments</div>
+        <div class="text-muted small">Track milestone, advance, and settlement payouts.</div>
+    </div>
+    <div class="action-strip">
+        <a href="{% url 'contractors:payment_create' %}" class="btn btn-primary">Add Payment</a>
+        <a href="{% url 'contractors:list' %}" class="btn btn-outline-secondary">Manage Contractors</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Contractor</th>
+                    <th>Amount</th>
+                    <th class="d-none d-md-table-cell">Wallet</th>
+                    <th class="d-none d-md-table-cell">Phase</th>
+                    <th class="d-none d-lg-table-cell">Reason</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td class="text-nowrap">{{ payment.date|date:"M d, Y" }}</td>
+                    <td class="fw-semibold">{{ payment.contractor.name }}</td>
+                    <td class="fw-semibold">₹{{ payment.amount|floatformat:2|intcomma }}</td>
+                    <td class="d-none d-md-table-cell">{{ payment.wallet.name }}</td>
+                    <td class="d-none d-md-table-cell">{{ payment.phase|default:"—" }}</td>
+                    <td class="d-none d-lg-table-cell text-wrap">{{ payment.reason|default:"—" }}</td>
+                    <td class="text-end text-nowrap">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'contractors:payment_update' payment.pk %}" class="btn btn-outline-secondary rounded-pill me-1">Edit</a>
+                            <a href="{% url 'contractors:payment_delete' payment.pk %}" class="btn btn-outline-danger rounded-pill">Del</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-4 text-muted">No contractor payments yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

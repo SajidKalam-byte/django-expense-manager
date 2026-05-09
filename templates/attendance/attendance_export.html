@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Records Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+        }
+        h1 {
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .meta {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 11px;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0 !important;
+            font-weight: bold;
+            -webkit-print-color-adjust: exact;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .daily-total {
+            background-color: #f9f9f9 !important;
+            font-weight: bold;
+            -webkit-print-color-adjust: exact;
+        }
+        .grand-total {
+            font-size: 14px;
+            font-weight: bold;
+            background-color: #e0e0e0 !important;
+            -webkit-print-color-adjust: exact;
+        }
+        @media print {
+            body { padding: 0; }
+            @page { margin: 1cm; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Attendance Records</h1>
+    <div class="meta">
+        {% if request.GET.start_date and request.GET.end_date %}
+            Period: {{ request.GET.start_date }} to {{ request.GET.end_date }} <br>
+        {% elif request.GET.start_date %}
+            From: {{ request.GET.start_date }} <br>
+        {% elif request.GET.end_date %}
+            Until: {{ request.GET.end_date }} <br>
+        {% endif %}
+        {% if request.GET.phase %}Phase: {{ request.GET.phase }} <br>{% endif %}
+        Generated on: {% now "d M Y H:i" %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Work Type</th>
+                <th class="text-center">Workers</th>
+                <th class="text-right">Wage</th>
+                <th>Day Type</th>
+                <th class="text-right">Total Cost</th>
+                <th>Wallet</th>
+                <th>Phase</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in attendances %}
+                {% for entry in group.entries %}
+                <tr>
+                    {% if forloop.first %}
+                    <td rowspan="{{ group.entries|length|add:1 }}" style="vertical-align: top;">
+                        <strong>{{ group.date|date:"d M Y" }}</strong>
+                    </td>
+                    {% endif %}
+                    <td>
+                        {% if entry.work_type %}
+                            {{ entry.work_type.name }}
+                        {% elif entry.custom_work_note %}
+                            {{ entry.custom_work_note }}
+                        {% else %}
+                            Labor
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ entry.workers_count }}</td>
+                    <td class="text-right">{{ entry.wage_per_worker|floatformat:0 }}</td>
+                    <td>
+                        {% if entry.is_half_day %}Half Day{% else %}Full Day{% endif %}
+                    </td>
+                    <td class="text-right">{{ entry.total_amount|floatformat:2 }}</td>
+                    <td>{{ entry.wallet.name|default:"—" }}</td>
+                    <td>{{ entry.phase|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+                <!-- Daily Summary Row -->
+                <tr class="daily-total">
+                    <td class="text-right">Daily Total:</td>
+                    <td class="text-center">{{ group.total_workers }}</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right">{{ group.total_cost|floatformat:2 }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No attendance records found for this filter.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        {% if attendances %}
+        <tfoot>
+            <tr class="grand-total">
+                <td colspan="2" class="text-right">Grand Total:</td>
+                <td class="text-center">{{ total_workers|default:0 }}</td>
+                <td></td>
+                <td></td>
+                <td class="text-right">{{ total_cost|default:0|floatformat:2 }}</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

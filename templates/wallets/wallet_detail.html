@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">{{ wallet.name }} Ledger</div>
+        <div class="text-muted small">Every credit and debit with clean traceability.</div>
+    </div>
+    <div class="chip">Current Balance: ₹{{ wallet.current_balance|floatformat:2|intcomma }}</div>
+</div>
+
+<a href="{% url 'wallets:list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">Back to Wallets</a>
+
+{# Summary cards (optional but helpful) #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Credits</span>
+                        <h5 class="mb-0 fw-bold text-success">₹{{ total_credits|default:0|floatformat:2|intcomma }}</h5>
+                    </div>
+                    <span class="text-muted small">Credits</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Debits</span>
+                        <h5 class="mb-0 fw-bold text-danger">₹{{ total_debits|default:0|floatformat:2|intcomma }}</h5>
+                    </div>
+                    <span class="text-muted small">Debits</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Transactions</span>
+                        <h5 class="mb-0 fw-bold">{{ transactions|length|intcomma }}</h5>
+                    </div>
+                    <span class="text-muted small">Count</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Initial Balance</span>
+                        <h5 class="mb-0 fw-bold">₹{{ wallet.initial_balance|floatformat:2|intcomma }}</h5>
+                    </div>
+                    <span class="text-muted small">Initial</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Search & Filter Card #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 d-md-none">
+            <h6 class="mb-0">Filter transactions</h6>
+            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">Toggle</button>
+        </div>
+        <div class="collapse d-md-block" id="filterCollapse">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted">Transaction type</label>
+                    <select id="typeFilter" class="form-select">
+                        <option value="all">All</option>
+                        <option value="CREDIT">Credits (Refunds)</option>
+                        <option value="DEBIT">Debits (Expenses)</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted">Search</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Expense title or amount...">
+                </div>
+                <div class="col-12 col-md-4">
+                    <button type="button" id="clearFilters" class="btn btn-outline-secondary w-100">Clear filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Transactions Table #}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="ledgerTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th class="d-none d-md-table-cell">Reference Expense</th>
+                    <th class="d-none d-lg-table-cell">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr data-type="{{ tx.transaction_type }}" data-search="{{ tx.expense.title|default:'' }} {{ tx.amount }}">
+                    <td>{{ tx.created_at|date:"M d, Y, h:i a" }}</td>
+                    <td>
+                        {% if tx.transaction_type == 'CREDIT' %}
+                            <span class="badge-soft text-success border-success">CREDIT</span>
+                        {% else %}
+                            <span class="badge-soft text-danger border-danger">DEBIT</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-semibold {% if tx.transaction_type == 'CREDIT' %}text-success{% else %}text-danger{% endif %}">
+                        ₹{{ tx.amount|floatformat:2|intcomma }}
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                        {% if tx.expense %}
+                            <a href="{% url 'expenses:update' tx.expense.pk %}" class="text-decoration-none">{{ tx.expense.title|truncatechars:30 }}</a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="d-none d-lg-table-cell text-muted small">
+                        {% if tx.transaction_type == 'DEBIT' and tx.expense %}
+                            {{ tx.expense.category.name|default:"—" }}
+                        {% elif tx.transaction_type == 'CREDIT' %}
+                            Refund
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">No transactions recorded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeFilter = document.getElementById('typeFilter');
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearFilters');
+        const tableRows = document.querySelectorAll('#ledgerTable tbody tr');
+        
+        function filterTable() {
+            const selectedType = typeFilter ? typeFilter.value : 'all';
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            
+            tableRows.forEach(row => {
+                const rowType = row.getAttribute('data-type') || '';
+                const rowSearchText = row.getAttribute('data-search') || row.innerText.toLowerCase();
+                
+                let typeMatch = (selectedType === 'all' || rowType === selectedType);
+                let searchMatch = (searchTerm === '' || rowSearchText.toLowerCase().includes(searchTerm));
+                
+                if (typeMatch && searchMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        if (typeFilter) typeFilter.addEventListener('change', filterTable);
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (typeFilter) typeFilter.value = 'all';
+                if (searchInput) searchInput.value = '';
+                filterTable();
+            });
+        }
+        
+        // Initial run to show all rows (in case of any pre‑filtering)
+        filterTable();
+    });
+</script>
+{% endblock %}
+{% endblock %}

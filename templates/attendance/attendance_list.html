@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">Attendance Ledger</div>
+        <div class="text-muted small">Quick labor logs with auto‑calculated totals.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'attendance:export' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary" target="_blank">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer me-1" viewBox="0 0 16 16" style="position:relative; top:-1px;">
+                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1"/>
+            </svg>
+            Print / PDF
+        </a>
+        <a href="{% url 'attendance:create' %}" class="btn btn-primary">Add Attendance</a>
+    </div>
+</div>
+
+{# Summary cards (optional but useful) #}
+{% if attendances %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Cost</span>
+                        <h4 class="mb-0 fw-bold">₹{{ total_cost|default:0|floatformat:2|intcomma }}</h4>
+                    </div>
+                    <span class="text-muted small">Totals</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Workers</span>
+                        <h4 class="mb-0 fw-bold">{{ total_workers|default:0|intcomma }}</h4>
+                    </div>
+                    <span class="text-muted small">Workers</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Entries</span>
+                        <h4 class="mb-0 fw-bold">{{ attendances|length|intcomma }}</h4>
+                    </div>
+                    <span class="text-muted small">Entries</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Avg. Wage</span>
+                        <h4 class="mb-0 fw-bold">₹{{ avg_wage|default:0|floatformat:0|intcomma }}</h4>
+                    </div>
+                    <span class="text-muted small">Average</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Filter Card – clean and collapsible on mobile #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 d-md-none">
+            <h6 class="mb-0">Filters</h6>
+            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">Toggle</button>
+        </div>
+        <div class="collapse d-md-block" id="filterCollapse">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Work Type</label>
+                    <select name="work_type" class="form-select">
+                        <option value="">All</option>
+                        {% for wt in work_types %}
+                        <option value="{{ wt.id }}" {% if request.GET.work_type == wt.id|stringformat:"s" %}selected{% endif %}>{{ wt.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Phase</label>
+                    <select name="phase" class="form-select">
+                        <option value="">All</option>
+                        {% for phase in phases %}
+                        <option value="{{ phase }}" {% if request.GET.phase == phase %}selected{% endif %}>{{ phase }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Search</label>
+                    <input type="text" name="q" class="form-control" placeholder="Worker / note" value="{{ request.GET.q }}">
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <a href="{% url 'attendance:list' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+
+            {# Quick date chips #}
+            <div class="mt-3 pt-2 border-top">
+                <div class="text-muted small mb-2">Quick filters</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="?start_date={{ today_str }}&end_date={{ today_str }}" class="badge-soft text-decoration-none">Today</a>
+                    <a href="?start_date={{ week_start_str }}&end_date={{ week_end_str }}" class="badge-soft text-decoration-none">This Week</a>
+                    <a href="?start_date={{ month_start_str }}&end_date={{ month_end_str }}" class="badge-soft text-decoration-none">This Month</a>
+                    <a href="?start_date={{ last_30_days_str }}&end_date={{ today_str }}" class="badge-soft text-decoration-none">Last 30 Days</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Attendance Table – responsive, with live search #}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="brand-font fs-5 m-0">Attendance Records</h4>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="attendanceTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Work Type</th>
+                    <th class="d-none d-md-table-cell">Workers</th>
+                    <th class="d-none d-lg-table-cell">Wage</th>
+                    <th>Day Type</th>
+                    <th>Total Cost</th>
+                    <th class="d-none d-lg-table-cell">Wallet</th>
+                    <th class="d-none d-md-table-cell">Phase</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in attendances %}
+                    {% for entry in group.entries %}
+                    <tr>
+                        {% if forloop.first %}
+                        <td rowspan="{{ group.entries|length|add:1 }}" class="text-nowrap align-middle border-end">
+                            <strong>{{ group.date|date:"d M Y" }}</strong>
+                        </td>
+                        {% endif %}
+                        <td>
+                            {% if entry.work_type %}
+                                <span class="badge-soft">{{ entry.work_type.name }}</span>
+                            {% elif entry.custom_work_note %}
+                                <span class="badge-soft">{{ entry.custom_work_note|truncatechars:20 }}</span>
+                            {% else %}
+                                <span class="badge-soft">Labor</span>
+                            {% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell">{{ entry.workers_count }}</td>
+                        <td class="d-none d-lg-table-cell">₹{{ entry.wage_per_worker|floatformat:0|intcomma }}</td>
+                        <td>
+                            {% if entry.is_half_day %}
+                                <span class="badge-soft" style="background:#fef3c7; color:#b45309;">Half Day</span>
+                            {% else %}
+                                <span class="badge-soft" style="background:#e0f2fe; color:#0369a1;">Full Day</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">₹{{ entry.total_amount|floatformat:2|intcomma }}</td>
+                        <td class="d-none d-lg-table-cell text-muted small">{{ entry.wallet.name|default:"—" }}</td>
+                        <td class="d-none d-md-table-cell">{{ entry.phase|default:"—" }}</td>
+                        <td class="text-end text-nowrap">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'attendance:update' entry.pk %}" class="btn btn-outline-secondary rounded-pill me-1">Edit</a>
+                                <a href="{% url 'attendance:delete' entry.pk %}" class="btn btn-outline-danger rounded-pill" data-confirm="Delete this attendance record?">Del</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Daily Summary Row -->
+                    <tr class="table-light fw-bold border-bottom border-2 border-dark" style="background-color: #f8fafc;">
+                        <td class="text-end text-muted small text-uppercase">Daily Total:</td>
+                        <td class="d-none d-md-table-cell text-primary">{{ group.total_workers }}</td>
+                        <td class="d-none d-lg-table-cell"></td>
+                        <td></td>
+                        <td class="text-primary">₹{{ group.total_cost|floatformat:2|intcomma }}</td>
+                        <td class="d-none d-lg-table-cell"></td>
+                        <td class="d-none d-md-table-cell"></td>
+                        <td></td>
+                    </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        No attendance records found.
+                        <div class="mt-2"><a href="{% url 'attendance:create' %}" class="btn btn-sm btn-primary">Log first attendance</a></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Pagination (if view provides paginator) #}
+{% if is_paginated %}
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1&{{ request.GET.urlencode }}">First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Enhance date pickers for mobile
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        input.addEventListener('click', (e) => {
+            if (typeof input.showPicker === 'function') {
+                e.preventDefault();
+                input.showPicker();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

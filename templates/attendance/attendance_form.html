@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-transparent border-bottom">
+                <h4 class="mb-0 brand-font">{% if object %}Edit Attendance{% else %}Log Attendance{% endif %}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="attendanceForm" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-custom alert-danger mb-4" role="alert">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {# Two‑column layout for larger screens #}
+                    <div class="row g-4">
+                        <!-- LEFT COLUMN -->
+                        <div class="col-12 col-md-6">
+                            {# Date field with helper button #}
+                            <div class="mb-3">
+                                <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                                <div class="input-group">
+                                    {{ form.date }}
+                                    <button type="button" class="btn btn-outline-secondary" data-fill-today="id_date">Today</button>
+                                </div>
+                                {% if form.date.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.date.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            {# Workers count & Wage per worker #}
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label for="{{ form.workers_count.id_for_label }}" class="form-label">Workers Count</label>
+                                    {{ form.workers_count }}
+                                    {% if form.workers_count.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.workers_count.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.wage_per_worker.id_for_label }}" class="form-label">Wage per Worker (₹)</label>
+                                    {{ form.wage_per_worker }}
+                                    <div class="form-text text-muted small">Auto‑filled from work type</div>
+                                    {% if form.wage_per_worker.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.wage_per_worker.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {# Work Type with inline add button #}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label for="{{ form.work_type.id_for_label }}" class="form-label mb-0">Work Type</label>
+                                    <a href="{% url 'attendance:worktype_create' %}" class="btn btn-sm btn-outline-secondary rounded-pill">Add</a>
+                                </div>
+                                {{ form.work_type }}
+                                {% if form.work_type.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.work_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            {# Custom Note #}
+                            <div class="mb-3">
+                                <label for="{{ form.custom_work_note.id_for_label }}" class="form-label">Custom Note</label>
+                                {{ form.custom_work_note }}
+                                <div class="form-text text-muted small">Optional – describe manual work</div>
+                                {% if form.custom_work_note.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.custom_work_note.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN -->
+                        <div class="col-12 col-md-6">
+                            {# Half day checkbox #}
+                            <div class="mb-3 form-check">
+                                {{ form.is_half_day }}
+                                <label class="form-check-label" for="{{ form.is_half_day.id_for_label }}">
+                                    Half Day <span class="text-muted small">(0.5× wage)</span>
+                                </label>
+                            </div>
+
+                            {# Wallet selection #}
+                            <div class="mb-3">
+                                <label for="{{ form.wallet.id_for_label }}" class="form-label">Wallet</label>
+                                {{ form.wallet }}
+                                {% if form.wallet.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.wallet.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            {# Phase selection #}
+                            <div class="mb-3">
+                                <label for="{{ form.phase.id_for_label }}" class="form-label">Phase</label>
+                                {{ form.phase }}
+                                <div class="form-text text-muted small">E.g., Foundation, Framing, Finishing</div>
+                                {% if form.phase.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.phase.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            {# Live total card (subtle highlight) #}
+                            <div class="alert alert-custom d-flex justify-content-between align-items-center mt-3" style="background-color: var(--accent-light); border: none;">
+                                <strong class="small">Calculated Total Cost</strong>
+                                <span class="chip bg-white text-dark">₹<span id="liveTotal">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Submit button #}
+                    <div class="mt-4 pt-2 border-top d-flex justify-content-end gap-2">
+                        <a href="{% url 'attendance:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">{% if object %}Update{% else %}Save{% endif %} Attendance</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // DOM elements
+        const wtSelect = document.getElementById('{{ form.work_type.id_for_label }}');
+        const wageInput = document.getElementById('{{ form.wage_per_worker.id_for_label }}');
+        const countInput = document.getElementById('{{ form.workers_count.id_for_label }}');
+        const halfDayCb = document.getElementById('{{ form.is_half_day.id_for_label }}');
+        const totalSpan = document.getElementById('liveTotal');
+
+        // Helper: update total cost
+        function updateTotal() {
+            const workers = parseFloat(countInput?.value) || 0;
+            const wage = parseFloat(wageInput?.value) || 0;
+            const multiplier = halfDayCb?.checked ? 0.5 : 1.0;
+            const total = workers * wage * multiplier;
+            if (totalSpan) totalSpan.textContent = total.toFixed(2);
+        }
+
+        // Auto‑fetch wage when work type changes
+        if (wtSelect) {
+            wtSelect.addEventListener('change', function() {
+                const wtId = this.value;
+                if (wtId) {
+                    fetch(`/attendance/api/wage/?id=${wtId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.wage && wageInput) {
+                                wageInput.value = data.wage;
+                                updateTotal();
+                            }
+                        })
+                        .catch(err => console.warn("Wage fetch error:", err));
+                }
+            });
+        }
+
+        // Attach event listeners
+        if (countInput) countInput.addEventListener('input', updateTotal);
+        if (wageInput) wageInput.addEventListener('input', updateTotal);
+        if (halfDayCb) halfDayCb.addEventListener('change', updateTotal);
+
+        // Initial calculation
+        updateTotal();
+    });
+</script>
+{% endblock %}
+{% endblock %}

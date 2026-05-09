@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="card shadow-sm">
+            <div class="card-header bg-transparent border-bottom">
+                <h4 class="mb-0 brand-font">{% if object %}Edit Expense{% else %}New Expense{% endif %}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {# Two‑column layout #}
+                    <div class="row g-4">
+                        <!-- LEFT COLUMN: Main expense fields -->
+                        <div class="col-12 col-md-6">
+                            <div class="row g-3">
+                                <!-- Quick Helpers -->
+                                <div class="col-12 mb-1 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 text-muted small text-uppercase fw-bold">Primary Details</h6>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0" data-fill-today="id_date">Use Today</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-0" id="setCash">Set Cash</button>
+                                    </div>
+                                </div>
+
+                                <!-- Group 1: Title & Amount (Prominent) -->
+                                <div class="col-12 col-md-8">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">{{ form.title.label }}</label>
+                                    {{ form.title }}
+                                    {% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label fw-bold text-primary">{{ form.amount.label }} (₹)</label>
+                                    {{ form.amount }}
+                                    {% for error in form.amount.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+
+                                <!-- Group 2: Date & Phase -->
+                                <div class="col-6">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label small text-muted mb-1">{{ form.date.label }}</label>
+                                    {{ form.date }}
+                                    {% for error in form.date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.phase.id_for_label }}" class="form-label small text-muted mb-1">{{ form.phase.label }}</label>
+                                    {{ form.phase }}
+                                    {% for error in form.phase.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+
+                                <!-- Group 3: Category & Subcategory -->
+                                <div class="col-6">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label small text-muted mb-1">{{ form.category.label }}</label>
+                                    {{ form.category }}
+                                    {% for error in form.category.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.subcategory.id_for_label }}" class="form-label small text-muted mb-1">{{ form.subcategory.label }}</label>
+                                    {{ form.subcategory }}
+                                    {% for error in form.subcategory.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+
+                                <!-- Group 4: Type & Payment Mode -->
+                                <div class="col-6">
+                                    <label for="{{ form.type.id_for_label }}" class="form-label small text-muted mb-1">{{ form.type.label }}</label>
+                                    {{ form.type }}
+                                    {% for error in form.type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.payment_mode.id_for_label }}" class="form-label small text-muted mb-1">{{ form.payment_mode.label }}</label>
+                                    {{ form.payment_mode }}
+                                    {% for error in form.payment_mode.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+
+                                <!-- Group 5: Vendor & Invoice -->
+                                <div class="col-6">
+                                    <label for="{{ form.vendor.id_for_label }}" class="form-label small text-muted mb-1">{{ form.vendor.label }}</label>
+                                    {{ form.vendor }}
+                                    {% for error in form.vendor.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.invoice_number.id_for_label }}" class="form-label small text-muted mb-1">{{ form.invoice_number.label }}</label>
+                                    {{ form.invoice_number }}
+                                    {% for error in form.invoice_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+
+                                <!-- Group 6: Notes & File -->
+                                <div class="col-12">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label small text-muted mb-1">{{ form.notes.label }}</label>
+                                    {{ form.notes }}
+                                    {% for error in form.notes.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div class="col-12">
+                                    <label for="{{ form.file.id_for_label }}" class="form-label small text-muted mb-1">{{ form.file.label }}</label>
+                                    {{ form.file }}
+                                    {% for error in form.file.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                </div>
+                            </div>
+
+                            {# Hidden management forms for formsets #}
+                            {{ item_formset.management_form }}
+                            {{ payment_formset.management_form }}
+                        </div>
+
+                        <!-- RIGHT COLUMN: Items + Split Payments accordions -->
+                        <div class="col-12 col-md-6">
+                            <div class="accordion" id="expenseExtras">
+                                <!-- Items accordion -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="itemsHeading">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#itemsCollapse" aria-expanded="true">
+                                                Line Items <span class="badge-soft ms-2">Optional – auto‑calculates total</span>
+                                            </button>
+                                    </h2>
+                                    <div id="itemsCollapse" class="accordion-collapse collapse show" data-bs-parent="#expenseExtras">
+                                        <div class="accordion-body">
+                                            <div class="d-flex justify-content-end mb-3">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="addItemRow">Add item</button>
+                                            </div>
+                                            <div id="itemRows" class="d-flex flex-column gap-3">
+                                                {% for item_form in item_formset %}
+                                                    <div class="row g-2 align-items-end item-row">
+                                                        <div class="col-7">
+                                                            <label class="form-label small">Item name</label>
+                                                            {{ item_form.name }}
+                                                        </div>
+                                                        <div class="col-3">
+                                                            <label class="form-label small">Amount (₹)</label>
+                                                            {{ item_form.amount }}
+                                                        </div>
+                                                        <div class="col-2 text-end">
+                                                            <label class="form-label small">Delete</label>
+                                                            <div class="form-check">
+                                                                {{ item_form.DELETE }}
+                                                            </div>
+                                                        </div>
+                                                        {{ item_form.id }}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            {# Hidden empty form template #}
+                                            <div id="item-empty-form" class="d-none">
+                                                <div class="row g-2 align-items-end item-row">
+                                                    <div class="col-7">
+                                                        <label class="form-label small">Item name</label>
+                                                        {{ item_formset.empty_form.name }}
+                                                    </div>
+                                                    <div class="col-3">
+                                                        <label class="form-label small">Amount (₹)</label>
+                                                        {{ item_formset.empty_form.amount }}
+                                                    </div>
+                                                    <div class="col-2 text-end">
+                                                        <label class="form-label small">Delete</label>
+                                                        <div class="form-check">
+                                                            {{ item_formset.empty_form.DELETE }}
+                                                        </div>
+                                                    </div>
+                                                    {{ item_formset.empty_form.id }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Split Payments accordion -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="paymentsHeading">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paymentsCollapse">
+                                                Split Payments <span class="badge-soft ms-2">Optional – multiple wallets</span>
+                                            </button>
+                                    </h2>
+                                    <div id="paymentsCollapse" class="accordion-collapse collapse" data-bs-parent="#expenseExtras">
+                                        <div class="accordion-body">
+                                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                                <div class="d-flex gap-2">
+                                                    <div class="chip">Total paid: ₹<span id="paymentTotal">0.00</span></div>
+                                                    <div class="chip">Remaining: ₹<span id="paymentRemaining">0.00</span></div>
+                                                </div>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="balanceLastRow">Balance last row</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="addPaymentRow">Add payment</button>
+                                                </div>
+                                            </div>
+                                            <div id="paymentRows" class="d-flex flex-column gap-3">
+                                                {% for payment_form in payment_formset %}
+                                                    <div class="row g-2 align-items-end payment-row">
+                                                        <div class="col-6">
+                                                            <label class="form-label small">Wallet</label>
+                                                            {{ payment_form.wallet }}
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <label class="form-label small">Amount (₹)</label>
+                                                            {{ payment_form.amount }}
+                                                        </div>
+                                                        <div class="col-2 text-end">
+                                                            <label class="form-label small">Delete</label>
+                                                            <div class="form-check">
+                                                                {{ payment_form.DELETE }}
+                                                            </div>
+                                                        </div>
+                                                        {{ payment_form.id }}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            {# Hidden empty form template #}
+                                            <div id="payment-empty-form" class="d-none">
+                                                <div class="row g-2 align-items-end payment-row">
+                                                    <div class="col-6">
+                                                        <label class="form-label small">Wallet</label>
+                                                        {{ payment_formset.empty_form.wallet }}
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <label class="form-label small">Amount (₹)</label>
+                                                        {{ payment_formset.empty_form.amount }}
+                                                    </div>
+                                                    <div class="col-2 text-end">
+                                                        <label class="form-label small">Delete</label>
+                                                        <div class="form-check">
+                                                            {{ payment_formset.empty_form.DELETE }}
+                                                        </div>
+                                                    </div>
+                                                    {{ payment_formset.empty_form.id }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Form action buttons #}
+                    <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-end gap-2">
+                        <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">{% if object %}Update{% else %}Create{% endif %} Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ---------- Helper: set Cash payment mode ----------
+        const cashButton = document.getElementById('setCash');
+        const paymentModeInput = document.getElementById('id_payment_mode');
+        if (cashButton && paymentModeInput) {
+            cashButton.addEventListener('click', () => {
+                paymentModeInput.value = 'Cash';
+            });
+        }
+
+        // ---------- Item rows dynamic handling ----------
+        const addItemButton = document.getElementById('addItemRow');
+        const itemRowsContainer = document.getElementById('itemRows');
+        const itemTotalForms = document.getElementById('id_items-TOTAL_FORMS');
+        const itemEmptyTemplate = document.getElementById('item-empty-form');
+        const expenseAmountInput = document.getElementById('id_amount');
+
+        function getItemAmountInputs() {
+            return Array.from(document.querySelectorAll('[name^="items-"][name$="-amount"]'));
+        }
+        function getItemDeleteChecks() {
+            return Array.from(document.querySelectorAll('[name^="items-"][name$="-DELETE"]'));
+        }
+        function updateItemTotal() {
+            if (!expenseAmountInput) return;
+            const amountInputs = getItemAmountInputs();
+            const deleteChecks = getItemDeleteChecks();
+            let total = 0;
+            amountInputs.forEach((input, idx) => {
+                if (deleteChecks[idx] && deleteChecks[idx].checked) return;
+                total += parseFloat(input.value || '0') || 0;
+            });
+            if (total > 0) {
+                expenseAmountInput.value = total.toFixed(2);
+                // trigger change event so payment summary updates
+                expenseAmountInput.dispatchEvent(new Event('input'));
+            }
+        }
+
+        if (addItemButton && itemRowsContainer && itemTotalForms && itemEmptyTemplate) {
+            addItemButton.addEventListener('click', () => {
+                const index = parseInt(itemTotalForms.value, 10);
+                const newHtml = itemEmptyTemplate.innerHTML.replace(/__prefix__/g, index);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newHtml.trim();
+                const newRow = tempDiv.firstElementChild;
+                if (newRow) {
+                    itemRowsContainer.appendChild(newRow);
+                    itemTotalForms.value = index + 1;
+                    updateItemTotal();
+                }
+            });
+        }
+
+        // Listen for item amount changes and deletions
+        document.addEventListener('input', (e) => {
+            if (e.target && e.target.matches('[name^="items-"][name$="-amount"]')) {
+                updateItemTotal();
+            }
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.matches('[name^="items-"][name$="-DELETE"]')) {
+                updateItemTotal();
+            }
+        });
+
+        // ---------- Payment rows dynamic handling ----------
+        const addPaymentButton = document.getElementById('addPaymentRow');
+        const paymentRowsContainer = document.getElementById('paymentRows');
+        const paymentTotalForms = document.getElementById('id_payments-TOTAL_FORMS');
+        const paymentEmptyTemplate = document.getElementById('payment-empty-form');
+        const paymentTotalSpan = document.getElementById('paymentTotal');
+        const paymentRemainingSpan = document.getElementById('paymentRemaining');
+        const balanceButton = document.getElementById('balanceLastRow');
+
+        function getPaymentAmountInputs() {
+            return Array.from(document.querySelectorAll('[name^="payments-"][name$="-amount"]'));
+        }
+        function getPaymentDeleteChecks() {
+            return Array.from(document.querySelectorAll('[name^="payments-"][name$="-DELETE"]'));
+        }
+        function updatePaymentSummary() {
+            const totalExpense = parseFloat(expenseAmountInput?.value || '0') || 0;
+            const amountInputs = getPaymentAmountInputs();
+            const deleteChecks = getPaymentDeleteChecks();
+            let paidTotal = 0;
+            amountInputs.forEach((input, idx) => {
+                if (deleteChecks[idx] && deleteChecks[idx].checked) return;
+                paidTotal += parseFloat(input.value || '0') || 0;
+            });
+            if (paymentTotalSpan) paymentTotalSpan.innerText = paidTotal.toFixed(2);
+            if (paymentRemainingSpan) paymentRemainingSpan.innerText = (totalExpense - paidTotal).toFixed(2);
+        }
+
+        function balanceLastPayment() {
+            const totalExpense = parseFloat(expenseAmountInput?.value || '0') || 0;
+            const amountInputs = getPaymentAmountInputs();
+            const deleteChecks = getPaymentDeleteChecks();
+            if (amountInputs.length === 0) return;
+            let currentPaid = 0;
+            amountInputs.forEach((input, idx) => {
+                if (deleteChecks[idx] && deleteChecks[idx].checked) return;
+                currentPaid += parseFloat(input.value || '0') || 0;
+            });
+            const remainder = totalExpense - currentPaid;
+            const lastInput = amountInputs[amountInputs.length - 1];
+            if (lastInput && remainder !== 0) {
+                lastInput.value = (parseFloat(lastInput.value || '0') + remainder).toFixed(2);
+                lastInput.dispatchEvent(new Event('input'));
+            }
+            updatePaymentSummary();
+        }
+
+        if (addPaymentButton && paymentRowsContainer && paymentTotalForms && paymentEmptyTemplate) {
+            addPaymentButton.addEventListener('click', () => {
+                const index = parseInt(paymentTotalForms.value, 10);
+                const newHtml = paymentEmptyTemplate.innerHTML.replace(/__prefix__/g, index);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newHtml.trim();
+                const newRow = tempDiv.firstElementChild;
+                if (newRow) {
+                    paymentRowsContainer.appendChild(newRow);
+                    paymentTotalForms.value = index + 1;
+                    updatePaymentSummary();
+                }
+            });
+        }
+
+        // Auto‑set first payment row amount when expense amount changes
+        function applyDefaultPaymentRow(force = false) {
+            const amountInputs = getPaymentAmountInputs();
+            if (amountInputs.length === 0) return;
+            const firstAmountInput = amountInputs[0];
+            const expenseAmt = parseFloat(expenseAmountInput?.value || '0') || 0;
+            const currentVal = parseFloat(firstAmountInput.value || '0') || 0;
+            const userEdited = firstAmountInput.dataset.userEdited === 'true';
+            if (expenseAmt > 0 && (force || (!userEdited && currentVal === 0))) {
+                firstAmountInput.value = expenseAmt.toFixed(2);
+                firstAmountInput.dispatchEvent(new Event('input'));
+            }
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target && e.target.matches('[name^="payments-"][name$="-amount"]')) {
+                e.target.dataset.userEdited = 'true';
+                updatePaymentSummary();
+            }
+            if (e.target && e.target.id === 'id_amount') {
+                updatePaymentSummary();
+                applyDefaultPaymentRow(true);
+            }
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.matches('[name^="payments-"][name$="-DELETE"]')) {
+                updatePaymentSummary();
+            }
+        });
+        if (balanceButton) {
+            balanceButton.addEventListener('click', balanceLastPayment);
+        }
+
+        // Initial updates
+        updateItemTotal();
+        updatePaymentSummary();
+        applyDefaultPaymentRow();
+    });
+</script>
+{% endblock %}

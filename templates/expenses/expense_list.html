@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">Expenses</div>
+        <div class="text-muted small">Tap, filter, and edit without typing too much.</div>
+    </div>
+    <div class="action-strip">
+        <a href="{% url 'expenses:create' %}" class="btn btn-primary">Add Expense</a>
+        <a href="{% url 'expenses:category_create' %}" class="btn btn-outline-secondary">Add Category</a>
+        <a href="{% url 'core:analytics' %}" class="btn btn-outline-secondary">Analytics</a>
+    </div>
+</div>
+
+{# Filter Card – clean, collapsible on mobile #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 d-md-none">
+            <h6 class="mb-0">Filters</h6>
+            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">Toggle</button>
+        </div>
+        <div class="collapse d-md-block" id="filterCollapse">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted">Start Date</label>
+                    <div class="input-group">
+                        <input type="date" id="id_start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                        <button type="button" class="btn btn-outline-secondary" data-fill-today="id_start_date">Today</button>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted">End Date</label>
+                    <div class="input-group">
+                        <input type="date" id="id_end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                        <button type="button" class="btn btn-outline-secondary" data-fill-today="id_end_date">Today</button>
+                    </div>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for c in categories %}
+                        <option value="{{ c.id }}" {% if request.GET.category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Vendor</label>
+                    <select name="vendor" class="form-select">
+                        <option value="">All Vendors</option>
+                        {% for v in vendors %}
+                        <option value="{{ v.id }}" {% if request.GET.vendor == v.id|stringformat:"s" %}selected{% endif %}>{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted">Search Vendor</label>
+                    <input type="text" name="q" class="form-control" placeholder="Type vendor name" value="{{ request.GET.q }}">
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'expenses:list' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+
+            {# Quick filter chips #}
+            <div class="mt-3 pt-2 border-top">
+                <div class="text-muted small mb-2">Quick Filters</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="?start_date={{ this_month_start_str }}&end_date={{ this_month_end_str }}" class="badge-soft text-decoration-none">This Month</a>
+                    <a href="?start_date={{ last_7_days_str }}&end_date={{ today_str }}" class="badge-soft text-decoration-none">Last 7 Days</a>
+                    <a href="?start_date={{ today_str }}&end_date={{ today_str }}" class="badge-soft text-decoration-none">Today</a>
+                    <a href="?start_date={{ this_week_start_str }}&end_date={{ this_week_end_str }}" class="badge-soft text-decoration-none">This Week</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Expenses Table – mobile‑optimized with live search #}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="brand-font fs-5 m-0">Expense List</h4>
+    <div>
+        <input type="text" id="expenseSearch" class="form-control form-control-sm table-filter-input" placeholder="Filter table..." style="width: 200px;" data-table-target="#expensesTable">
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 searchable-table" id="expensesTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Title / Details</th>
+                    <th class="d-none d-md-table-cell">Category</th>
+                    <th class="d-none d-lg-table-cell">Vendor</th>
+                    <th>Amount</th>
+                    <th class="d-none d-lg-table-cell">Wallet</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr class="{% if expense.amount > LARGE_EXPENSE_THRESHOLD %}table-warning{% endif %}">
+                    <td class="text-nowrap">{{ expense.date|date:"M d, Y" }}</td>
+                    <td>
+                        <div class="fw-semibold">{{ expense.title|truncatechars:30 }}</div>
+                        <div class="text-muted small d-md-none">{{ expense.category.name }}</div>
+                        {% if expense.items.exists %}
+                            <div class="text-muted small mt-1">
+                                {% for item in expense.items.all %}{{ item.name }} (₹{{ item.amount }}){% if not forloop.last %}, {% endif %}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="d-none d-md-table-cell"><span class="badge-soft">{{ expense.category.name }}</span></td>
+                    <td class="d-none d-lg-table-cell">{{ expense.vendor.name|default:"—" }}</td>
+                    <td class="fw-semibold text-nowrap">₹{{ expense.amount|floatformat:2|intcomma }}</td>
+                    <td class="d-none d-lg-table-cell text-muted small">{{ expense.wallet.name }}</td>
+                    <td class="text-end text-nowrap">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'expenses:update' expense.pk %}" class="btn btn-outline-secondary rounded-pill me-1">Edit</a>
+                            <a href="{% url 'expenses:delete' expense.pk %}" class="btn btn-outline-danger rounded-pill" data-confirm="Delete this expense?">Del</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        No expenses recorded yet or matching filter.
+                        <div class="mt-2"><a href="{% url 'expenses:create' %}" class="btn btn-sm btn-primary">Add your first expense</a></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Pagination (if provided by view) – optional but nice #}
+{% if is_paginated %}
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1&{{ request.GET.urlencode }}">First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Next</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}">Last</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Table search (overrides base filter if needed)
+    const searchInput = document.getElementById('expenseSearch');
+    const table = document.getElementById('expensesTable');
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const term = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.innerText.toLowerCase().includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Enhance date pickers with better mobile interaction
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        input.addEventListener('click', (e) => {
+            if (typeof input.showPicker === 'function') {
+                e.preventDefault();
+                input.showPicker();
+            }
+        });
+    });
+
+    // Auto-dismiss any alert messages after 5 seconds
+    const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

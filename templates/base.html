@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sajid — Smart Finance</title>
+    <!-- Bootstrap 5 + Google Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ------------------------------
+            DESIGN SYSTEM (muted, professional, mobile-first)
+        -------------------------------- */
+        :root {
+            --ink: #0a0f1c;
+            --ink-soft: #1e293b;
+            --muted: #5b6e8c;
+            --muted-light: #8a99b0;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border-subtle: #e9edf2;
+            --accent: #1f6e6b;
+            --accent-soft: #2c7e7b;
+            --accent-light: rgba(31, 110, 107, 0.08);
+            --warning: #e67e22;
+            --danger: #dc5f5f;
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+            --shadow-lg: 0 20px 32px -12px rgba(0, 0, 0, 0.08);
+            --radius-card: 1.25rem;
+            --radius-element: 0.85rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f4f7fc 0%, #eef2f7 100%);
+            color: var(--ink);
+            line-height: 1.45;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        /* Navbar — sleek & minimal */
+        .navbar {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03), var(--shadow-sm);
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .navbar-light .navbar-nav .nav-link {
+            color: var(--ink-soft);
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.2s ease;
+            border-radius: 40px;
+        }
+
+        .navbar-light .navbar-nav .nav-link:hover,
+        .navbar-light .navbar-nav .nav-link.active {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .navbar-toggler {
+            border: 1px solid var(--border-subtle);
+            padding: 0.4rem 0.6rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 3px rgba(31, 110, 107, 0.15);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2810, 15, 28, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .navbar-collapse {
+            background: #ffffff;
+            border-radius: var(--radius-card);
+            padding: 0.75rem;
+        }
+
+        @media (min-width: 992px) {
+            .navbar-collapse {
+                background: transparent;
+                border-radius: 0;
+                padding: 0;
+            }
+        }
+
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.65rem;
+            color: var(--accent) !important;
+            letter-spacing: -0.02em;
+        }
+
+        .btn-outline-light-custom {
+            border: 1px solid var(--border-subtle);
+            background: white;
+            color: var(--ink-soft);
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-light-custom:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Cards — clean, airy, touch-friendly */
+        .card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.2s ease, box-shadow 0.2s;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        /* Forms — modern, spacious, accessible */
+        .form-label {
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            color: var(--ink-soft);
+        }
+
+        .form-control, .form-select, textarea, input:not([type="checkbox"]):not([type="radio"]) {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-element);
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            background: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus, textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(31, 110, 107, 0.15);
+            outline: none;
+        }
+
+        /* Touch-friendly buttons */
+        .btn {
+            border-radius: 60px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-soft);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--border-subtle);
+            color: var(--ink-soft);
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.9rem;
+        }
+
+        /* Chips & badges */
+        .badge-soft {
+            background: var(--accent-light);
+            color: var(--accent);
+            border-radius: 60px;
+            padding: 0.3rem 0.8rem;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        .bg-teal {
+            background-color: var(--accent) !important;
+        }
+
+        /* Table responsive + modern */
+        .table {
+            --bs-table-bg: transparent;
+            margin-bottom: 0;
+        }
+
+        .table th {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--muted);
+            border-bottom-width: 1px;
+        }
+
+        .table td {
+            vertical-align: middle;
+            padding: 0.9rem 0.75rem;
+            color: var(--ink-soft);
+        }
+
+        .table-responsive {
+            border-radius: var(--radius-card);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td, .table th {
+            white-space: nowrap;
+        }
+
+        .table td.text-wrap {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        /* Alert / messages */
+        .alert-custom {
+            border-radius: var(--radius-element);
+            border-left: 4px solid;
+            font-size: 0.9rem;
+        }
+
+        /* Quick actions row */
+        .action-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1rem 0 1.5rem;
+        }
+
+        @media (max-width: 576px) {
+            .action-strip {
+                width: 100%;
+            }
+            .action-strip .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
+
+        /* Mobile-first spacing */
+        .page-shell {
+            padding-bottom: 2.5rem;
+            padding-top: 0.75rem;
+        }
+
+        /* touch targets */
+        button, a.btn, .nav-link, .form-control, .form-select {
+            touch-action: manipulation;
+        }
+
+        /* empty state */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: #fefefe;
+            border-radius: var(--radius-card);
+            color: var(--muted);
+        }
+
+        /* floating helper for back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1rem;
+            background: white;
+            border-radius: 60px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            color: var(--accent);
+            border: 1px solid var(--border-subtle);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 1040;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 1rem;
+            }
+            .btn {
+                padding: 0.55rem 1rem;
+            }
+            .navbar-brand {
+                font-size: 1.4rem;
+            }
+            .table-responsive {
+                margin: 0 -0.25rem;
+            }
+            .card h3 {
+                font-size: 1.15rem;
+            }
+            .card h4 {
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== MODERN NAVBAR (mobile collapse, clean) ========== -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand brand-font fw-bold" href="{% url 'core:dashboard' %}">Byte</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mt-2 mt-lg-0 gap-1">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'expenses:list' %}">Expenses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'wallets:list' %}">Wallets</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'vendors:list' %}">Vendors</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'attendance:list' %}">Attendance</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contractors:payments' %}">Contractor Payments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contractors:list' %}">Contractors</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'core:analytics' %}">Analytics</a></li>
+                </ul>
+                <div class="d-flex align-items-center mt-3 mt-lg-0">
+                    <span class="text-muted small me-2 d-none d-sm-inline"> </span>
+                    <a class="btn btn-primary btn-sm rounded-pill" href="{% url 'expenses:create' %}">Add Expense</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- main container with messages and dynamic content -->
+    <div class="container page-shell mt-3 mt-md-4">
+        <!-- Django Messages with elegant styling (auto-dismiss optional) -->
+        {% if messages %}
+            <div class="messages-container mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-custom alert-dismissible fade show rounded-3 shadow-sm d-flex align-items-center gap-2 p-3 {% if message.tags == 'error' %}alert-danger border-danger{% elif message.tags == 'success' %}alert-success border-success{% elif message.tags == 'warning' %}alert-warning border-warning{% else %}alert-info border-info{% endif %}" role="alert">
+                        <span class="flex-grow-1">{{ message }}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- MAIN BLOCK: child templates will inject content (cards, forms, tables) -->
+        {% block content %}
+            <!-- Elegant default placeholder (only visible if no child template overrides) -->
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body p-5">
+                    <h4 class="mb-2">Welcome to Homee</h4>
+                    <p class="text-muted">Your financial command center. Select a module from the navbar or start adding expenses.</p>
+                    <a href="{% url 'expenses:create' %}" class="btn btn-primary mt-2">Create first expense</a>
+                </div>
+            </div>
+        {% endblock %}
+    </div>
+
+    <!-- Back to top button (mobile friendly) -->
+    <div class="back-to-top" id="backToTopBtn" role="button" aria-label="Back to top">↑</div>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Enhanced JS: forms, date picker, table filter, double-submit protection, back to top -->
+    <script>
+        (function() {
+            'use strict';
+
+            // -------------------------------
+            // 1. Enhanced date picker (showPicker fallback)
+            // -------------------------------
+            function initDatePickers() {
+                const dateInputs = document.querySelectorAll('input[type="date"], .js-date-input');
+                dateInputs.forEach(input => {
+                    input.addEventListener('click', (e) => {
+                        if (typeof input.showPicker === 'function') {
+                            e.preventDefault();
+                            input.showPicker();
+                        }
+                    });
+                    // Add placeholder styling if empty
+                    if (!input.value) {
+                        input.style.color = 'var(--muted-light)';
+                        input.addEventListener('change', function() {
+                            this.style.color = 'var(--ink)';
+                        });
+                    }
+                });
+            }
+
+            // -------------------------------
+            // 2. Date range presets (original preserved + extended)
+            // -------------------------------
+            function initDateRangePresets() {
+                document.querySelectorAll('[data-range-start]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const start = btn.getAttribute('data-range-start');
+                        const end = btn.getAttribute('data-range-end');
+                        const startInput = document.querySelector('[name="start_date"]');
+                        const endInput = document.querySelector('[name="end_date"]');
+                        if (startInput && start) startInput.value = start;
+                        if (endInput && end) endInput.value = end;
+                        // trigger change event to allow any listeners
+                        if (startInput) startInput.dispatchEvent(new Event('change'));
+                        if (endInput) endInput.dispatchEvent(new Event('change'));
+                    });
+                });
+                document.querySelectorAll('[data-fill-today]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.getAttribute('data-fill-today');
+                        const target = document.getElementById(targetId);
+                        if (target) {
+                            const now = new Date();
+                            const yyyy = now.getFullYear();
+                            const mm = String(now.getMonth() + 1).padStart(2, '0');
+                            const dd = String(now.getDate()).padStart(2, '0');
+                            target.value = `${yyyy}-${mm}-${dd}`;
+                            target.dispatchEvent(new Event('change'));
+                        }
+                    });
+                });
+            }
+
+            // -------------------------------
+            // 3. Table search filter (generic for any .searchable-table)
+            //    Improves list views on mobile.
+            // -------------------------------
+            function initTableFilter() {
+                const searchInput = document.querySelector('#tableSearch, .table-filter-input');
+                if (searchInput) {
+                    const targetTableId = searchInput.getAttribute('data-table-target') || 'data-table';
+                    const table = document.querySelector(targetTableId) || document.querySelector('.searchable-table');
+                    if (table) {
+                        searchInput.addEventListener('keyup', function() {
+                            const term = this.value.toLowerCase();
+                            const rows = table.querySelectorAll('tbody tr');
+                            rows.forEach(row => {
+                                const text = row.innerText.toLowerCase();
+                                row.style.display = text.includes(term) ? '' : 'none';
+                            });
+                        });
+                    }
+                }
+                // also allow adding search input dynamically, but we watch for any .table-filter-input
+                const dynamicFilter = document.querySelector('.table-filter-input');
+                if (dynamicFilter && !dynamicFilter.hasAttribute('data-listener')) {
+                    dynamicFilter.setAttribute('data-listener', 'true');
+                    const tableEl = document.querySelector('.searchable-table');
+                    if (tableEl) {
+                        dynamicFilter.addEventListener('input', function(e) {
+                            const filter = e.target.value.toLowerCase();
+                            tableEl.querySelectorAll('tbody tr').forEach(tr => {
+                                tr.style.display = tr.innerText.toLowerCase().includes(filter) ? '' : 'none';
+                            });
+                        });
+                    }
+                }
+            }
+
+            // -------------------------------
+            // 4. Prevent double form submission + client-side validation enhancement
+            // -------------------------------
+            function initFormProtection() {
+                const forms = document.querySelectorAll('form');
+                forms.forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        const submitBtn = form.querySelector('[type="submit"]');
+                        if (submitBtn && !submitBtn.disabled) {
+                            // avoid double click if form is valid
+                            setTimeout(() => {
+                                submitBtn.disabled = true;
+                                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+                            }, 10);
+                            // re-enable if form validation fails after 2 sec? but mostly success redirects.
+                            // if validation fails, re-enable on error event (fallback)
+                            form.addEventListener('invalid', function() {
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = submitBtn.getAttribute('data-original-text') || 'Submit';
+                                }
+                            }, { once: true });
+                            if (!submitBtn.getAttribute('data-original-text')) {
+                                submitBtn.setAttribute('data-original-text', submitBtn.innerHTML);
+                            }
+                        }
+                        // bootstrap validation styles if needed
+                        if (!form.checkValidity()) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = submitBtn.getAttribute('data-original-text') || 'Submit';
+                            }
+                            form.classList.add('was-validated');
+                        } else {
+                            form.classList.add('was-validated');
+                        }
+                    }, false);
+                });
+            }
+
+            // -------------------------------
+            // 5. Confirm destructive actions (data-confirm)
+            // -------------------------------
+            function initConfirmDialogs() {
+                const confirmEls = document.querySelectorAll('[data-confirm]');
+                confirmEls.forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        const msg = el.getAttribute('data-confirm') || 'Are you sure?';
+                        if (!confirm(msg)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
+                        return true;
+                    });
+                });
+            }
+
+            // -------------------------------
+            // 6. Back to top button visibility + scroll
+            // -------------------------------
+            function initBackToTop() {
+                const backBtn = document.getElementById('backToTopBtn');
+                if (!backBtn) return;
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 300) {
+                        backBtn.classList.add('show');
+                    } else {
+                        backBtn.classList.remove('show');
+                    }
+                });
+                backBtn.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            // -------------------------------
+            // 7. Auto-dismiss alerts after 5 seconds (better UX)
+            // -------------------------------
+            function autoDismissAlerts() {
+                const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+                alerts.forEach(alert => {
+                    setTimeout(() => {
+                        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                        bsAlert.close();
+                    }, 5000);
+                });
+            }
+
+            // -------------------------------
+            // 8. Add floating label fallback for modern forms? Not needed, but add numeric stepper helper
+            //    Provide quick formatting for currency inputs if class .currency-input
+            // -------------------------------
+            function initCurrencyInputs() {
+                const currencyInputs = document.querySelectorAll('.currency-input');
+                currencyInputs.forEach(input => {
+                    input.addEventListener('blur', function() {
+                        let val = this.value.replace(/[^0-9.-]/g, '');
+                        if (!isNaN(parseFloat(val)) && isFinite(val)) {
+                            this.value = parseFloat(val).toFixed(2);
+                        }
+                    });
+                });
+            }
+
+            // -------------------------------
+            // 9. Mobile menu auto-close after clicking a link (optional, improve nav)
+            // -------------------------------
+            function initMobileNavAutoClose() {
+                const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+                const navbarCollapse = document.querySelector('.navbar-collapse');
+                if (navbarCollapse) {
+                    navLinks.forEach(link => {
+                        link.addEventListener('click', () => {
+                            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                                const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                                if (bsCollapse) bsCollapse.hide();
+                            }
+                        });
+                    });
+                }
+            }
+
+            // -------------------------------
+            // 10. Current page active link highlight (based on URL)
+            // -------------------------------
+            function highlightActiveNav() {
+                const currentPath = window.location.pathname;
+                const navItems = document.querySelectorAll('.navbar-nav .nav-link');
+                navItems.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && href !== '#' && currentPath.includes(href)) {
+                        link.classList.add('active');
+                    } else if (href === currentPath) {
+                        link.classList.add('active');
+                    } else if (href === '/' && currentPath === '/') {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // execute after DOM ready
+            document.addEventListener('DOMContentLoaded', function() {
+                initDatePickers();
+                initDateRangePresets();
+                initTableFilter();
+                initFormProtection();
+                initConfirmDialogs();
+                initBackToTop();
+                autoDismissAlerts();
+                initCurrencyInputs();
+                initMobileNavAutoClose();
+                highlightActiveNav();
+
+                // Additional: manually trigger showPicker for any element with .date-icon
+                document.querySelectorAll('.date-picker-trigger').forEach(trigger => {
+                    trigger.addEventListener('click', () => {
+                        const targetId = trigger.getAttribute('data-target');
+                        if (targetId) {
+                            const dateInput = document.getElementById(targetId);
+                            if (dateInput && dateInput.showPicker) dateInput.showPicker();
+                        }
+                    });
+                });
+
+                // Fix for iOS: ensure input zoom isn't too aggressive (meta already set)
+                // Add custom style to numeric fields step increment on mobile
+                const numberInputs = document.querySelectorAll('input[type="number"]');
+                numberInputs.forEach(inp => {
+                    inp.setAttribute('inputmode', 'decimal');
+                });
+            });
+        })();
+    </script>
+
+    <!-- optional extra block for child templates to add page-specific JS -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

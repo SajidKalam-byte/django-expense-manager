@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <div class="page-title brand-font">Wallets</div>
+        <div class="text-muted small">Live balances across cash and bank wallets.</div>
+    </div>
+    <a href="{% url 'expenses:create' %}" class="btn btn-outline-secondary">Add Expense</a>
+</div>
+
+{# Summary Card - Total Balance #}
+{% if wallets %}
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Balance</span>
+                        <h3 class="mt-1 mb-0 fw-bold text-success">₹{{ total_balance|default:0|floatformat:2|intcomma }}</h3>
+                    </div>
+                    <span class="text-muted small">Total</span>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">{{ wallets|length }} wallet{{ wallets|pluralize }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Search Filter Card #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3 d-md-none">
+            <h6 class="mb-0">Search wallets</h6>
+            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false">Toggle</button>
+        </div>
+        <div class="collapse d-md-block" id="filterCollapse">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-8">
+                    <label class="form-label small text-muted">Filter by name</label>
+                    <input type="text" id="walletSearch" class="form-control" placeholder="Type wallet name...">
+                </div>
+                <div class="col-12 col-md-4">
+                    <button type="button" id="clearSearch" class="btn btn-outline-secondary w-100">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Wallets Grid #}
+<div class="row g-4" id="walletsGrid">
+    {% for wallet in wallets %}
+    <div class="col-12 col-sm-6 col-lg-4 wallet-card" data-name="{{ wallet.name|lower }}">
+        <div class="card shadow-sm border-0 h-100 transition-hover">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">{{ wallet.name }}</h5>
+                    <span class="text-muted small">Balance</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted small">Current balance</span>
+                    <h3 class="fw-bold {% if wallet.current_balance >= 0 %}text-success{% else %}text-danger{% endif %} mb-0">
+                        ₹{{ wallet.current_balance|floatformat:2|intcomma }}
+                    </h3>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Initial: ₹{{ wallet.initial_balance|floatformat:2|intcomma }}</small>
+                </div>
+                <a href="{% url 'wallets:detail' wallet.pk %}" class="btn btn-outline-primary btn-sm rounded-pill">View Ledger</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+            <div class="empty-state text-center py-5">
+                <p class="text-muted">No wallets created.</p>
+            <small class="text-muted">Use the Django admin panel to add one.</small>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('walletSearch');
+        const clearBtn = document.getElementById('clearSearch');
+        const walletCards = document.querySelectorAll('.wallet-card');
+        
+        function filterWallets() {
+            const term = searchInput.value.toLowerCase().trim();
+            walletCards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                if (name.includes(term)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterWallets);
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    filterWallets();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

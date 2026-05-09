@@ -1,0 +1,50 @@
+# Phase 4: Budget, Burn Rate, and Projections Implementation
+
+This phase finalizes the expense tracker by extracting advanced analytics to predict project trajectory, identifying financial bottlenecks before they happen, and ensuring the overall construction stays within defined budgets.
+
+## Proposed Architecture & Changes
+
+### 1. Model Additions (`core/models.py`)
+We will introduce a `ProjectMeta` or `ProjectBudget` singleton model to define the global constraint of the project.
+- `total_budget`: (Decimal) The total financial limit for the project.
+- `start_date`: (Date) When the project started.
+- `target_end_date`: (Date) When the project is expected to finish.
+Future-proofing (not used yet):
+- Optional `Phase` model with nullable `budget` for later phase budgets.
+
+### 2. Analytics Engine (`core/services.py`)
+A dedicated pure-Python service layer to process the calculations independently:
+- **Elapsed Time**: `today - start_date`.
+- **Remaining Time**: `target_end_date - today`.
+- **Daily Burn Rate**: `Total Spent / Elapsed Days` with a zero-day guard.
+- **Projected Final Cost**: `Daily Burn Rate * Total Project Duration`.
+- **Budget Health**: Explicit variance and status label.
+
+Critical refinements (required):
+- Use `Decimal` everywhere (no float leakage).
+- If `elapsed_days <= 0`, set `daily_burn_rate = Decimal('0')` and projection equals `total_spent`.
+- Projected total should never be less than `total_spent`.
+- Status logic based on variance (`Over Budget`, `Under Budget`, `On Track`).
+
+### 3. Views and UI Integration (`core/views.py` & `templates/core/analytics.html`)
+To prevent the main dashboard from becoming overcrowded, we will create a dedicated **Analytics & Projections** tab (`/analytics/`).
+- **Dashboard**: Add one small widget for `Projected Over/Under Budget`.
+- **Budget Progress Bar**: Visual marker showing `Total Spent` vs `Total Budget`.
+- **Burn Rate**: Show daily burn and monthly equivalent (`daily_burn * 30`).
+- **Projections Widget**: Show projected final cost, variance, and status badge.
+- **Phase-wise / Category Breakdown Expansion**: Aggregations showing where the burn rate is heaviest (e.g., Labor vs specific Material types).
+
+### 4. Configuration Form
+- A simple settings page attached to the Analytics view allowing the user to Update `total_budget` and `target_end_date` dynamically.
+
+### 5. Detailed Test Script (`test_phase4.py`)
+- We will write a deep mathematical validation script explicitly to test the burn rate division, edge cases (e.g., start date is today so division by zero), and ensure projections are correctly derived.
+- Add cases for over-budget scenario, long duration stability, and projection stability.
+
+---
+
+## Decisions Confirmed
+- Separate `/analytics/` page with a small dashboard widget for `Projected Over/Under Budget`.
+- Start with a single global budget only (phase budgets deferred).
+
+Once you want me to proceed, I will execute Phase 4, wire up the math engine, and perform the rigorous testing.
