@@ -1,0 +1,28 @@
+name: Daily Secure Database Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs every day at 2:00 AM UTC
+  workflow_dispatch: # Allows you to trigger a backup manually
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump PostgreSQL Database
+        run: |
+          # Dumps the entire database into a SQL file
+          pg_dump "${{ secrets.SUPABASE_DB_URL }}" > backup.sql
+          
+      - name: Encrypt Backup (AES-256)
+        run: |
+          # Because your repository is public, we encrypt the backup using a password!
+          # This makes it physically impossible for anyone else to read your data.
+          gpg --symmetric --cipher-algo AES256 --batch --passphrase "${{ secrets.BACKUP_PASSWORD }}" -o backup.sql.gpg backup.sql
+          
+      - name: Upload to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-database-backup-${{ github.run_id }}
+          path: backup.sql.gpg
+          retention-days: 30 # Keep the last 30 days of backups safely stored
