@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Dump PostgreSQL Database
         run: |
-          # Dumps the entire database into a SQL file
-          pg_dump "${{ secrets.SUPABASE_DB_URL }}" > backup.sql
+          # Dumps the entire database into a SQL file using the exact Postgres 17 client
+          docker run --rm postgres:17 pg_dump "${{ secrets.SUPABASE_DB_URL }}" > backup.sql
           
       - name: Encrypt Backup (AES-256)
         run: |
