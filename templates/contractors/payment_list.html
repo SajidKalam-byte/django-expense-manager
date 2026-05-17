@@ -47,6 +47,13 @@
                 <tr><td colspan="7" class="text-center py-4 text-muted">No contractor payments yet.</td></tr>
                 {% endfor %}
             </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="2" class="text-end">Total:</td>
+                    <td>₹{{ grand_total|floatformat:2|intcomma }}</td>
+                    <td colspan="4"></td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 </div>

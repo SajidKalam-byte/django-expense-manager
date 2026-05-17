@@ -26,6 +26,13 @@ class ContractorPaymentListView(ListView):
 	context_object_name = 'payments'
 	ordering = ['-date', '-created_at']
 
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		from django.db.models import Sum
+		total = ContractorPayment.objects.aggregate(total=Sum('amount'))['total']
+		context['grand_total'] = total if total else 0
+		return context
+
 
 class ContractorPaymentCreateView(CreateView):
 	model = ContractorPayment
